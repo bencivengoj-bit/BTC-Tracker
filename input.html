@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#080808">
+<title>BTC Accumulation Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --orange: #f7931a;
+    --gold:   #ffb84d;
+    --dark:   #080808;
+    --panel:  #101010;
+    --border: #1e1e1e;
+    --text:   #e0e0e0;
+    --dim:    #4a4a4a;
+  }
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+background: #080808 !important;
+color-scheme: dark !important;
+}
+
+body {
+background: #080808 !important;
+color: var(–text);
+font-family: ‘Share Tech Mono’, monospace;
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 36px 16px 60px;
+background-image:
+radial-gradient(ellipse at 15% 0%, rgba(247,147,26,0.07) 0%, transparent 55%),
+radial-gradient(ellipse at 85% 100%, rgba(247,147,26,0.04) 0%, transparent 55%);
+}
+
+/* ── Header ── */
+header {
+text-align: center;
+margin-bottom: 32px;
+}
+
+.logo {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 3rem;
+color: var(–orange);
+letter-spacing: 0.1em;
+line-height: 1;
+text-shadow: 0 0 50px rgba(247,147,26,0.35);
+}
+
+.subtitle {
+font-size: 0.62rem;
+color: var(–dim);
+letter-spacing: 0.35em;
+text-transform: uppercase;
+margin-top: 5px;
+}
+
+/* ── Cards ── */
+.card {
+background: var(–panel);
+border: 1px solid var(–border);
+border-radius: 6px;
+width: 100%;
+max-width: 540px;
+padding: 24px;
+margin-bottom: 16px;
+}
+
+.card-title {
+font-size: 0.58rem;
+letter-spacing: 0.28em;
+color: var(–dim);
+text-transform: uppercase;
+margin-bottom: 18px;
+}
+
+/* ── Balance strip ── */
+.balance-row {
+display: flex;
+align-items: baseline;
+gap: 10px;
+margin-bottom: 4px;
+}
+
+.balance-num {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 3rem;
+color: var(–orange);
+letter-spacing: 0.04em;
+line-height: 1;
+transition: opacity 0.3s;
+}
+
+.balance-unit { font-size: 0.9rem; color: var(–gold); letter-spacing: 0.2em; }
+
+.usd-eq {
+font-size: 0.75rem;
+color: var(–dim);
+margin-bottom: 14px;
+}
+
+.usd-eq span { color: #777; }
+
+.price-pill {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+background: rgba(247,147,26,0.08);
+border: 1px solid rgba(247,147,26,0.18);
+color: var(–gold);
+padding: 4px 12px;
+font-size: 0.6rem;
+letter-spacing: 0.14em;
+border-radius: 20px;
+cursor: pointer;
+transition: background 0.15s;
+user-select: none;
+}
+.price-pill:hover { background: rgba(247,147,26,0.14); }
+
+/* ── Form ── */
+.field-grid {
+display: grid;
+grid-template-columns: 1fr 1fr 1fr;
+gap: 10px;
+margin-bottom: 12px;
+}
+
+.field { display: flex; flex-direction: column; gap: 5px; }
+
+.field-label {
+font-size: 0.55rem;
+letter-spacing: 0.15em;
+color: var(–dim);
+text-transform: uppercase;
+}
+
+input[type=“number”],
+input[type=“date”] {
+background: #0a0a0a;
+border: 1px solid var(–border);
+color: var(–text);
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 0.85rem;
+padding: 9px 11px;
+border-radius: 4px;
+outline: none;
+width: 100%;
+transition: border 0.2s;
+-moz-appearance: textfield;
+}
+
+input[type=“date”] { color-scheme: dark; font-size: 0.78rem; }
+
+input[type=“number”]::-webkit-outer-spin-button,
+input[type=“number”]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+input:focus {
+border-color: var(–orange);
+box-shadow: 0 0 0 2px rgba(247,147,26,0.1);
+}
+
+.date-row {
+margin-bottom: 10px;
+}
+
+.btn-log {
+width: 100%;
+background: var(–orange);
+color: #000;
+border: none;
+border-radius: 4px;
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.05rem;
+letter-spacing: 0.12em;
+padding: 13px;
+cursor: pointer;
+transition: background 0.15s;
+}
+.btn-log:hover { background: var(–gold); }
+
+/* ── Purchase log table ── */
+.log-header-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 14px;
+}
+
+.log-cols {
+display: grid;
+grid-template-columns: 48px 1fr 1fr 1fr 20px;
+gap: 6px;
+padding: 0 0 8px;
+border-bottom: 1px solid var(–border);
+font-size: 0.55rem;
+letter-spacing: 0.12em;
+color: var(–dim);
+text-transform: uppercase;
+}
+
+.log-list {
+list-style: none;
+max-height: 260px;
+overflow-y: auto;
+scrollbar-width: thin;
+scrollbar-color: var(–border) transparent;
+}
+
+.log-list::-webkit-scrollbar { width: 3px; }
+.log-list::-webkit-scrollbar-thumb { background: var(–border); }
+
+.log-row {
+display: grid;
+grid-template-columns: 48px 1fr 1fr 1fr 20px;
+gap: 6px;
+align-items: center;
+padding: 9px 0;
+border-bottom: 1px solid #141414;
+font-size: 0.72rem;
+animation: slideIn 0.2s ease;
+}
+
+.log-row:last-child { border-bottom: none; }
+
+.c-date  { color: var(–dim); font-size: 0.65rem; }
+.c-usd   { color: #888; }
+.c-price { color: #555; font-size: 0.65rem; }
+.c-btc   { color: var(–gold); }
+
+.btn-del {
+background: none;
+border: none;
+color: #252525;
+cursor: pointer;
+font-size: 0.75rem;
+padding: 2px;
+line-height: 1;
+transition: color 0.15s;
+}
+.btn-del:hover { color: #c0392b; }
+
+.log-totals {
+display: flex;
+justify-content: space-between;
+padding-top: 12px;
+margin-top: 6px;
+border-top: 1px solid var(–border);
+font-size: 0.7rem;
+}
+
+.tot-label { font-size: 0.55rem; letter-spacing: 0.14em; color: var(–dim); text-transform: uppercase; margin-bottom: 3px; }
+.tot-val-btc { color: var(–orange); font-family: ‘Bebas Neue’, sans-serif; font-size: 1.1rem; letter-spacing: 0.05em; }
+.tot-val-usd { color: #777; }
+
+.no-entries {
+color: var(–dim);
+font-size: 0.68rem;
+text-align: center;
+padding: 24px 0;
+letter-spacing: 0.1em;
+}
+
+.btn-clear {
+font-size: 0.55rem;
+color: var(–dim);
+background: none;
+border: none;
+font-family: ‘Share Tech Mono’, monospace;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+cursor: pointer;
+transition: color 0.15s;
+}
+.btn-clear:hover { color: #c0392b; }
+
+/* ── Chart ── */
+.chart-controls {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 16px;
+}
+
+.toggle-group { display: flex; gap: 6px; }
+
+.tog {
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 0.58rem;
+letter-spacing: 0.1em;
+text-transform: uppercase;
+padding: 4px 10px;
+border-radius: 3px;
+border: 1px solid var(–border);
+background: transparent;
+color: var(–dim);
+cursor: pointer;
+transition: all 0.15s;
+}
+
+.tog.active {
+background: rgba(247,147,26,0.12);
+border-color: rgba(247,147,26,0.35);
+color: var(–orange);
+}
+
+.chart-wrap {
+position: relative;
+height: 210px;
+}
+
+.chart-empty {
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+color: var(–dim);
+font-size: 0.68rem;
+letter-spacing: 0.1em;
+}
+
+/* ── Reset ── */
+.btn-sell {
+background: transparent;
+color: #c0392b;
+border: 1px solid #c0392b;
+}
+.btn-sell:hover { background: rgba(192,57,43,0.1); }
+
+.btn-reset-all {
+width: 100%;
+max-width: 540px;
+background: transparent;
+color: #2a2a2a;
+border: 1px solid #1a1a1a;
+padding: 10px;
+border-radius: 4px;
+font-family: ‘Share Tech Mono’, monospace;
+font-size: 0.62rem;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+cursor: pointer;
+transition: all 0.15s;
+margin-top: 4px;
+}
+.btn-reset-all:hover { border-color: #c0392b; color: #c0392b; }
+
+/* ── Animations ── */
+.flash { animation: flash 0.35s ease; }
+
+@keyframes flash {
+0%  { opacity: 1; }
+35% { opacity: 0.15; }
+100%{ opacity: 1; }
+}
+
+@keyframes slideIn {
+from { opacity: 0; transform: translateX(-6px); }
+to   { opacity: 1; transform: translateX(0); }
+}
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="logo">&#8383; SATS TRACKER</div>
+  <div class="subtitle">Bitcoin Accumulation Log</div>
+</header>
+
+<!-- ── Total Balance ── -->
+
+<div class="card">
+  <div class="card-title">Total Balance</div>
+  <div class="balance-row">
+    <div class="balance-num" id="balDisplay">0.00000000</div>
+    <div class="balance-unit">BTC</div>
+  </div>
+  <div class="usd-eq" id="usdEq">&#8776; &#8212;</div>
+  <div class="price-pill" onclick="fetchPrice()">
+    <span>&#8635;</span>
+    <span>BTC: <span id="priceDisplay">Loading...</span></span>
+  </div>
+</div>
+
+<!-- ── Log a Purchase ── -->
+
+<div class="card">
+  <div class="card-title">Log a Purchase</div>
+
+  <div class="date-row">
+    <div class="field">
+      <div class="field-label">Date</div>
+      <input type="date" id="inDate" />
+    </div>
+  </div>
+
+  <div class="field-grid">
+    <div class="field">
+      <div class="field-label">$ Spent</div>
+      <input type="number" id="inDollars" placeholder="0.00" min="0" step="0.01" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Price</div>
+      <input type="number" id="inPrice" placeholder="0" min="0" step="1" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Received</div>
+      <input type="number" id="inBtc" placeholder="0.00000000" min="0" step="0.00000001" />
+    </div>
+  </div>
+
+<button class="btn-log" onclick="logPurchase()">+ LOG PURCHASE</button>
+
+</div>
+
+<!-- ── Log a Sale ── -->
+
+<div class="card">
+  <div class="card-title">Log a Sale</div>
+
+  <div class="date-row">
+    <div class="field">
+      <div class="field-label">Date</div>
+      <input type="date" id="sellDate" />
+    </div>
+  </div>
+
+  <div class="field-grid">
+    <div class="field">
+      <div class="field-label">$ Received</div>
+      <input type="number" id="sellDollars" placeholder="0.00" min="0" step="0.01" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Price</div>
+      <input type="number" id="sellPrice" placeholder="0" min="0" step="1" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Sold</div>
+      <input type="number" id="sellBtc" placeholder="0.00000000" min="0" step="0.00000001" />
+    </div>
+  </div>
+
+<button class="btn-log btn-sell" onclick="logSale()">− LOG SALE</button>
+
+</div>
+
+<!-- ── Purchase Log ── -->
+
+<div class="card">
+  <div class="log-header-row">
+    <div class="card-title" style="margin-bottom:0;">Purchase Log</div>
+    <button class="btn-clear" onclick="clearLog()">Clear All</button>
+  </div>
+
+  <div class="log-cols">
+    <span>Date</span>
+    <span>$ Spent</span>
+    <span>BTC Price</span>
+    <span>BTC Received</span>
+    <span></span>
+  </div>
+
+  <ul class="log-list" id="logList">
+    <li class="no-entries">No purchases logged yet.</li>
+  </ul>
+
+  <div class="log-totals" id="logTotals" style="display:none;">
+    <div>
+      <div class="tot-label">Total Invested</div>
+      <div class="tot-val-usd" id="totUsd">$0.00</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="tot-label">Total BTC</div>
+      <div class="tot-val-btc" id="totBtc">0.00000000</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Accumulation Chart ── -->
+
+<div class="card">
+  <div class="chart-controls">
+    <div class="card-title" style="margin-bottom:0;">Accumulation Chart</div>
+    <div class="toggle-group">
+      <button class="tog active" id="togBtc" onclick="setMode('btc')">BTC</button>
+      <button class="tog" id="togUsd" onclick="setMode('usd')">$ Invested</button>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+    <div class="chart-empty" id="chartEmpty">Log purchases to see your accumulation chart.</div>
+  </div>
+</div>
+
+<!-- Reset -->
+
+<!-- ── Quick Adjust ── -->
+
+<div class="card">
+  <div class="card-title">Quick Adjust</div>
+  <div class="field" style="margin-bottom:10px;">
+    <div class="field-label">BTC Amount (rewards, fees, etc.)</div>
+    <input type="number" id="adjustBtc" placeholder="0.00000000" min="0" step="0.00000001" />
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn-log" style="background:rgba(247,147,26,0.15);color:var(--orange);border:1px solid rgba(247,147,26,0.3);" onclick="quickAdjust('add')">+ ADD</button>
+    <button class="btn-log btn-sell" onclick="quickAdjust('sub')">− SUBTRACT</button>
+  </div>
+</div>
+
+<button class="btn-reset-all" onclick="resetAll()">⚠ Reset All Data</button>
+
+<script>
+  // ── State ──
+  let purchases = JSON.parse(localStorage.getItem('btc_v2_purchases') || '[]');
+  // purchases: [{ date, dollars, price, btc }]
+  let btcPrice  = null;
+  let chartMode = 'btc';
+  let myChart   = null;
+
+  // ── Persistence ──
+  function save() {
+    localStorage.setItem('btc_v2_purchases', JSON.stringify(purchases));
+  }
+
+  // ── Derived totals ──
+  function totalBtc() {
+    return purchases.reduce((s, p) => p.type === 'sell' ? s - p.btc : s + p.btc, 0);
+  }
+  function totalUsd() {
+    return purchases.reduce((s, p) => p.type === 'sell' ? s - p.dollars : s + p.dollars, 0);
+  }
+
+  // ── Balance display ──
+  function updateBalance() {
+    const el = document.getElementById('balDisplay');
+    el.textContent = totalBtc().toFixed(8);
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    updateUsd();
+  }
+
+  function updateUsd() {
+    const el = document.getElementById('usdEq');
+    if (btcPrice && totalBtc() > 0) {
+      const val = (totalBtc() * btcPrice).toLocaleString('en-US', { style:'currency', currency:'USD' });
+      el.innerHTML = '&#8776; <span>' + val + ' USD</span>';
+    } else {
+      el.innerHTML = '&#8776; &#8212;';
+    }
+  }
+
+  // ── Price feed ──
+  async function fetchPrice() {
+    document.getElementById('priceDisplay').textContent = '...';
+    try {
+      const r = await fetch('https://api.coindesk.com/v1/bpi/currentprice/BTC.json');
+      const d = await r.json();
+      btcPrice = d.bpi.USD.rate_float;
+    } catch {
+      try {
+        const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+        const d2 = await r2.json();
+        btcPrice = d2.bitcoin.usd;
+      } catch { document.getElementById('priceDisplay').textContent = 'N/A'; return; }
+    }
+    document.getElementById('priceDisplay').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
+    updateUsd();
+  }
+
+  // ── Log purchase ──
+  function logPurchase() {
+    const dateVal = document.getElementById('inDate').value;
+    const dollars = parseFloat(document.getElementById('inDollars').value);
+    const price   = parseFloat(document.getElementById('inPrice').value);
+    const btc     = parseFloat(document.getElementById('inBtc').value);
+
+    if (isNaN(dollars) || dollars <= 0) { alert('Enter a valid dollar amount.'); return; }
+    if (isNaN(price)   || price   <= 0) { alert('Enter the BTC price at purchase.'); return; }
+    if (isNaN(btc)     || btc     <= 0) { alert('Enter the BTC amount you received.'); return; }
+
+    purchases.push({ type: 'buy', date: dateVal || today(), dollars, price, btc });
+    save(); updateBalance(); renderLog(); renderChart();
+
+    document.getElementById('inDollars').value = '';
+    document.getElementById('inPrice').value   = '';
+    document.getElementById('inBtc').value     = '';
+  }
+
+  function logSale() {
+    const dateVal = document.getElementById('sellDate').value;
+    const dollars = parseFloat(document.getElementById('sellDollars').value);
+    const price   = parseFloat(document.getElementById('sellPrice').value);
+    const btc     = parseFloat(document.getElementById('sellBtc').value);
+
+    if (isNaN(dollars) || dollars <= 0) { alert('Enter a valid dollar amount.'); return; }
+    if (isNaN(price)   || price   <= 0) { alert('Enter the BTC price at sale.'); return; }
+    if (isNaN(btc)     || btc     <= 0) { alert('Enter the BTC amount you sold.'); return; }
+    if (btc > totalBtc()) { alert('Cannot sell more BTC than your current balance.'); return; }
+
+    purchases.push({ type: 'sell', date: dateVal || today(), dollars, price, btc });
+    save(); updateBalance(); renderLog(); renderChart();
+
+    document.getElementById('sellDollars').value = '';
+    document.getElementById('sellPrice').value   = '';
+    document.getElementById('sellBtc').value     = '';
+  }
+
+  function today() { return new Date().toISOString().split('T')[0]; }
+
+  // ── Render log ──
+  function fmtDate(d) {
+    if (!d) return '—';
+    const [y, m, dy] = d.split('-');
+    return parseInt(m) + '/' + parseInt(dy) + '/' + y.slice(2);
+  }
+
+  function renderLog() {
+    const list = document.getElementById('logList');
+    const tots = document.getElementById('logTotals');
+
+    if (!purchases.length) {
+      list.innerHTML = '<li class="no-entries">No purchases logged yet.</li>';
+      tots.style.display = 'none';
+      return;
+    }
+
+    // Show newest first
+    const sorted = [...purchases].map((p, i) => ({...p, i})).reverse();
+
+    list.innerHTML = sorted.map(p => `
+      <li class="log-row">
+        <span class="c-date">${fmtDate(p.date)}</span>
+        <span class="c-usd" style="color:#888">${p.dollars > 0 ? (p.type==='sell'?'-':'+') + '$' + p.dollars.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#333">' + (p.note||'—') + '</span>'}</span>
+        <span class="c-price">${p.price > 0 ? '$' + Math.round(p.price).toLocaleString('en-US') : ''}</span>
+        <span class="c-btc" style="color:${p.type==='sell'?'#c0392b':'var(--gold)'}">${p.type==='sell'?'-':'+'}&#8239;${p.btc.toFixed(8)}</span>
+        <button class="btn-del" onclick="deleteEntry(${p.i})">&#x2715;</button>
+      </li>`).join('');
+
+    document.getElementById('totBtc').textContent = totalBtc().toFixed(8);
+    document.getElementById('totUsd').textContent = '$' + totalUsd().toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    tots.style.display = 'flex';
+  }
+
+  function deleteEntry(idx) {
+    if (!confirm('Remove this purchase?')) return;
+    purchases.splice(idx, 1);
+    save();
+    updateBalance();
+    renderLog();
+    renderChart();
+  }
+
+  function clearLog() {
+    if (!purchases.length) return;
+    if (!confirm('Clear all purchases? This will also reset your balance and chart.')) return;
+    purchases = [];
+    save();
+    updateBalance();
+    renderLog();
+    renderChart();
+  }
+
+  // ── Chart ──
+  function setMode(mode) {
+    chartMode = mode;
+    document.getElementById('togBtc').classList.toggle('active', mode === 'btc');
+    document.getElementById('togUsd').classList.toggle('active', mode === 'usd');
+    renderChart();
+  }
+
+  function renderChart() {
+    const canvas   = document.getElementById('chart');
+    const emptyEl  = document.getElementById('chartEmpty');
+
+    if (!purchases.length) {
+      emptyEl.style.display = 'flex';
+      canvas.style.display  = 'none';
+      if (myChart) { myChart.destroy(); myChart = null; }
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    canvas.style.display  = 'block';
+
+    // Build monthly running totals
+    const monthMap = {};
+    const sorted   = [...purchases].sort((a, b) => a.date.localeCompare(b.date));
+
+    let runBtc = 0, runUsd = 0;
+    sorted.forEach(p => {
+      const [y, m] = (p.date || '2024-01').split('-');
+      const key = y + '-' + m;
+      if (p.type === 'sell') {
+        runBtc -= p.btc;
+        runUsd -= p.dollars;
+      } else {
+        runBtc += p.btc;
+        runUsd += p.dollars;
+      }
+      monthMap[key] = { runBtc: Math.max(0, runBtc), runUsd: Math.max(0, runUsd) };
+    });
+
+    const keys   = Object.keys(monthMap).sort();
+    const labels = keys.map(k => {
+      const [y, m] = k.split('-');
+      return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1] + " '" + y.slice(2);
+    });
+
+    const values = keys.map(k =>
+      chartMode === 'btc'
+        ? parseFloat(monthMap[k].runBtc.toFixed(8))
+        : parseFloat(monthMap[k].runUsd.toFixed(2))
+    );
+
+    // Color: gradient from dim to orange
+    const colors = keys.map((_, i) => {
+      const t = keys.length === 1 ? 1 : i / (keys.length - 1);
+      const alpha = 0.25 + t * 0.7;
+      return `rgba(247,147,26,${alpha.toFixed(2)})`;
+    });
+
+    if (myChart) myChart.destroy();
+
+    myChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderColor: 'rgba(247,147,26,0.5)',
+          borderWidth: 1,
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#161616',
+            borderColor: '#2a2a2a',
+            borderWidth: 1,
+            titleColor: '#555',
+            bodyColor: '#f7931a',
+            titleFont: { family: 'Share Tech Mono', size: 10 },
+            bodyFont:  { family: 'Share Tech Mono', size: 12 },
+            callbacks: {
+              title: ctx => ctx[0].label,
+              label: ctx => chartMode === 'btc'
+                ? ctx.parsed.y.toFixed(8) + ' BTC total'
+                : '$' + ctx.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2}) + ' invested'
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid:  { color: '#141414' },
+            ticks: { color: '#3a3a3a', font: { family: 'Share Tech Mono', size: 9 }, maxRotation: 45 }
+          },
+          y: {
+            grid:  { color: '#141414' },
+            ticks: {
+              color: '#3a3a3a',
+              font:  { family: 'Share Tech Mono', size: 9 },
+              callback: v => chartMode === 'btc'
+                ? v.toFixed(4)
+                : '$' + v.toLocaleString('en-US')
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function quickAdjust(type) {
+    const btc = parseFloat(document.getElementById('adjustBtc').value);
+    if (isNaN(btc) || btc <= 0) { alert('Enter a valid BTC amount.'); return; }
+    if (type === 'sub' && btc > totalBtc()) { alert('Cannot subtract more than your current balance.'); return; }
+
+    purchases.push({
+      type: type === 'add' ? 'buy' : 'sell',
+      date: today(),
+      dollars: 0,
+      price: 0,
+      btc: btc,
+      note: type === 'add' ? 'Quick Add' : 'Quick Subtract'
+    });
+
+    save(); updateBalance(); renderLog(); renderChart();
+    document.getElementById('adjustBtc').value = '';
+  }
+
+  // ── Reset all ──
+  function resetAll() {
+    if (!confirm('Reset EVERYTHING?\n\nThis clears all purchases, your balance, and the chart.')) return;
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+    purchases = [];
+    save();
+    updateBalance();
+    renderLog();
+    renderChart();
+  }
+
+  // ── Init ──
+  document.getElementById('inDate').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('sellDate').value = new Date().toISOString().split('T')[0];
+  updateBalance();
+  renderLog();
+  renderChart();
+  fetchPrice();
+  setInterval(fetchPrice, 60000);
+</script>
+
+</body>
+</html>
