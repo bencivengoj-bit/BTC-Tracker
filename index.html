@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#161616">
+<title>BTC Accumulation Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --orange: #f7931a;
+    --gold:   #ffcc70;
+    --dark:   #161616;
+    --panel:  #1a1a1a;
+    --border: #303030;
+    --text:   #f2f2f2;
+    --dim:    #666666;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    background: #161616 !important;
+    color-scheme: dark !important;
+  }
+
+  body {
+    background: #161616 !important;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 18px 60px;
+    background-image:
+      radial-gradient(ellipse at 15% 0%, rgba(247,147,26,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 100%, rgba(247,147,26,0.04) 0%, transparent 55%);
+  }
+
+  /* ── Header ── */
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.6rem;
+    color: var(--orange);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    text-shadow: 0 0 60px rgba(247,147,26,0.6), 0 0 20px rgba(247,147,26,0.4);
+  }
+
+  .subtitle {
+    font-size: 0.95rem;
+    color: #aaa;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 7px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 600px;
+    padding: 28px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+  }
+
+  .card:first-of-type {
+    border-color: rgba(247,147,26,0.25);
+    box-shadow: 0 4px 32px rgba(247,147,26,0.08);
+  }
+
+  .card-title {
+    font-size: 1.05rem;
+    letter-spacing: 0.24em;
+    color: #999;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 12px;
+  }
+
+  /* ── Balance strip ── */
+  .balance-row {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .balance-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.8rem;
+    color: var(--orange);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    transition: opacity 0.3s;
+  }
+
+  .balance-unit { font-size: 1.05rem; color: var(--gold); letter-spacing: 0.2em; }
+
+  .usd-eq {
+    font-size: 1.05rem;
+    color: #aaa;
+    margin-bottom: 16px;
+  }
+
+  .usd-eq span { color: #999; }
+
+  .price-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(247,147,26,0.12);
+    border: 1px solid rgba(247,147,26,0.35);
+    color: var(--gold);
+    padding: 7px 16px;
+    font-size: 0.95rem;
+    letter-spacing: 0.12em;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .price-pill:hover { background: rgba(247,147,26,0.2); }
+
+  /* ── Form ── */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+
+  .field-label {
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+    color: #aaa;
+    text-transform: uppercase;
+  }
+
+  input[type="number"],
+  input[type="date"] {
+    background: #161616;
+    border: 1px solid #383838;
+    color: #e0e0e0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    padding: 12px 13px;
+    border-radius: 5px;
+    outline: none;
+    width: 100%;
+    transition: border 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="date"] { color-scheme: dark; font-size: 1.1rem; padding: 15px 14px; }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  input:focus {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 2px rgba(247,147,26,0.1);
+  }
+
+  .date-row {
+    margin-bottom: 10px;
+  }
+
+  .btn-log {
+    width: 100%;
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.1em;
+    padding: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-log:hover { background: #2ecc71; }
+
+  /* ── Purchase log table ── */
+  .log-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .log-cols {
+    display: grid;
+    grid-template-columns: 54px 1fr 1fr 1fr 24px;
+    gap: 8px;
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    color: #aaa;
+    text-transform: uppercase;
+  }
+
+  .log-list {
+    list-style: none;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .log-list::-webkit-scrollbar { width: 3px; }
+  .log-list::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .log-row {
+    display: grid;
+    grid-template-columns: 54px 1fr 1fr 1fr 24px;
+    gap: 8px;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid #282828;
+    font-size: 1rem;
+    animation: slideIn 0.2s ease;
+  }
+
+  .log-row:last-child { border-bottom: none; }
+
+  .c-date  { color: #aaa; font-size: 0.92rem; }
+  .c-usd   { color: #aaa; }
+  .c-price { color: #999; font-size: 0.92rem; }
+  .c-btc   { color: var(--gold); }
+
+  .btn-del {
+    background: none;
+    border: none;
+    color: #444;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px;
+    line-height: 1;
+    transition: color 0.15s;
+  }
+  .btn-del:hover { color: #c0392b; }
+
+  .log-totals {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 14px;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    font-size: 1rem;
+  }
+
+  .tot-label { font-size: 1rem; letter-spacing: 0.12em; color: #aaa; text-transform: uppercase; margin-bottom: 4px; }
+  .tot-val-btc { color: var(--orange); font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; }
+  .tot-val-usd { color: #999; }
+
+  .no-entries {
+    color: #aaa;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 28px 0;
+    letter-spacing: 0.08em;
+  }
+
+  .btn-clear {
+    font-size: 1rem;
+    color: #aaa;
+    background: none;
+    border: none;
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .btn-clear:hover { color: #c0392b; }
+
+  /* ── Chart ── */
+  .chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .toggle-group { display: flex; gap: 6px; }
+
+  .tog {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 1rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 6px 13px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tog.active {
+    background: rgba(247,147,26,0.12);
+    border-color: rgba(247,147,26,0.35);
+    color: var(--orange);
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 260px;
+  }
+
+  .chart-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Reset ── */
+  .btn-sell {
+    background: transparent;
+    color: #c0392b;
+    border: 1px solid #c0392b;
+  }
+  .btn-sell:hover { background: rgba(192,57,43,0.1); }
+
+  .btn-reset-all {
+    width: 100%;
+    max-width: 600px;
+    background: transparent;
+    color: #555;
+    border: 1px solid #2e2e2e;
+    padding: 12px;
+    border-radius: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 4px;
+  }
+  .btn-reset-all:hover { border-color: #c0392b; color: #c0392b; }
+
+  /* ── Animations ── */
+  .flash { animation: flash 0.35s ease; }
+
+  @keyframes flash {
+    0%  { opacity: 1; }
+    35% { opacity: 0.15; }
+    100%{ opacity: 1; }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">&#8383; SATS TRACKER</div>
+  <div class="subtitle">Bitcoin Accumulation Log</div>
+</header>
+
+<!-- ── Total Balance ── -->
+<div class="card">
+  <div class="card-title">Total Balance</div>
+  <div class="balance-row">
+    <div class="balance-num" id="balDisplay">0.00000000</div>
+    <div class="balance-unit">BTC</div>
+  </div>
+  <div class="usd-eq" id="usdEq">&#8776; &#8212;</div>
+  <div class="price-pill" onclick="fetchPrice()">
+    <span>&#8635;</span>
+    <span>BTC: <span id="priceDisplay">Loading...</span></span>
+  </div>
+</div>
+
+<!-- ── Log a Purchase ── -->
+<div class="card">
+  <div class="card-title">Log a Purchase</div>
+
+  <div class="date-row">
+    <div class="field">
+      <div class="field-label">Date</div>
+      <input type="date" id="inDate" />
+    </div>
+  </div>
+
+  <div class="field-grid">
+    <div class="field">
+      <div class="field-label">$ Spent</div>
+      <input type="number" id="inDollars" placeholder="0.00" min="0" step="0.01" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Price</div>
+      <input type="number" id="inPrice" placeholder="0" min="0" step="1" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Received</div>
+      <input type="number" id="inBtc" placeholder="0.00000000" min="0" step="0.00000001" />
+    </div>
+  </div>
+
+  <button class="btn-log" onclick="logPurchase()">+ LOG PURCHASE</button>
+</div>
+
+<!-- ── Log a Sale ── -->
+<div class="card">
+  <div class="card-title">Log a Sale</div>
+
+  <div class="date-row">
+    <div class="field">
+      <div class="field-label">Date</div>
+      <input type="date" id="sellDate" />
+    </div>
+  </div>
+
+  <div class="field-grid">
+    <div class="field">
+      <div class="field-label">$ Received</div>
+      <input type="number" id="sellDollars" placeholder="0.00" min="0" step="0.01" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Price</div>
+      <input type="number" id="sellPrice" placeholder="0" min="0" step="1" />
+    </div>
+    <div class="field">
+      <div class="field-label">BTC Sold</div>
+      <input type="number" id="sellBtc" placeholder="0.00000000" min="0" step="0.00000001" />
+    </div>
+  </div>
+
+  <button class="btn-log btn-sell" onclick="logSale()">− LOG SALE</button>
+</div>
+
+<!-- ── Purchase Log ── -->
+<div class="card">
+  <div class="log-header-row">
+    <div class="card-title" style="margin-bottom:0;">Purchase Log</div>
+    <button class="btn-clear" onclick="clearLog()">Clear All</button>
+  </div>
+
+  <div class="log-cols">
+    <span>Date</span>
+    <span>$ Spent</span>
+    <span>BTC Price</span>
+    <span>BTC Received</span>
+    <span></span>
+  </div>
+
+  <ul class="log-list" id="logList">
+    <li class="no-entries">No purchases logged yet.</li>
+  </ul>
+
+  <div class="log-totals" id="logTotals" style="display:none;">
+    <div>
+      <div class="tot-label">Total Invested</div>
+      <div class="tot-val-usd" id="totUsd">$0.00</div>
+    </div>
+    <div style="text-align:right;">
+      <div class="tot-label">Total BTC</div>
+      <div class="tot-val-btc" id="totBtc">0.00000000</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Accumulation Chart ── -->
+<div class="card">
+  <div class="chart-controls">
+    <div class="card-title" style="margin-bottom:0;">Accumulation Chart</div>
+    <div class="toggle-group">
+      <button class="tog active" id="togBtc" onclick="setMode('btc')">BTC</button>
+      <button class="tog" id="togUsd" onclick="setMode('usd')">$ Invested</button>
+      <button class="tog" id="togDist" onclick="setMode('dist')">Price Dist.</button>
+    </div>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="chart"></canvas>
+    <div class="chart-empty" id="chartEmpty">Log purchases to see your accumulation chart.</div>
+  </div>
+</div>
+
+<!-- ── TradingView Live Chart ── -->
+<div class="card" style="padding-left:0;padding-right:0;padding-bottom:0;overflow:hidden;">
+  <div class="card-title" style="padding:0 28px 16px;">Live BTC / USD <span style="font-size:0.7rem;color:#444;letter-spacing:0.05em;">— use Log button in toolbar</span></div>
+  <div id="tradingview_btcusd"></div>
+</div>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script type="text/javascript">
+  new TradingView.widget({
+    "width": "100%",
+    "height": 420,
+    "symbol": "BITSTAMP:BTCUSD",
+    "interval": "60",
+    "timezone": "America/Chicago",
+    "theme": "dark",
+    "style": "1",
+    "locale": "en",
+    "toolbar_bg": "#0e0e0e",
+    "backgroundColor": "rgba(14,14,14,1)",
+    "gridColor": "rgba(255,255,255,0.03)",
+    "enable_publishing": false,
+    "hide_top_toolbar": false,
+    "hide_side_toolbar": true,
+    "withdateranges": true,
+    "allow_symbol_change": false,
+    "save_image": false,
+    "container_id": "tradingview_btcusd",
+    "overrides": {
+      "paneProperties.background": "#0e0e0e",
+      "paneProperties.backgroundType": "solid"
+    }
+  });
+</script>
+
+<!-- ── Quick Adjust ── -->
+<div class="card">
+  <div class="card-title">Quick Adjust</div>
+  <div class="field" style="margin-bottom:10px;">
+    <div class="field-label">BTC Amount (rewards, fees, etc.)</div>
+    <input type="number" id="adjustBtc" placeholder="0.00000000" min="0" step="0.00000001" />
+  </div>
+  <div style="display:flex;gap:10px;">
+    <button class="btn-log" style="background:rgba(247,147,26,0.15);color:var(--orange);border:1px solid rgba(247,147,26,0.3);" onclick="quickAdjust('add')">+ ADD</button>
+    <button class="btn-log btn-sell" onclick="quickAdjust('sub')">− SUBTRACT</button>
+  </div>
+</div>
+
+<!-- ── GitHub Sync ── -->
+<div class="card" id="syncCard">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div class="card-title" style="margin-bottom:0;">GitHub Sync</div>
+    <div id="syncStatus" style="font-size:0.85rem;letter-spacing:0.08em;color:#555;">NOT CONNECTED</div>
+  </div>
+
+  <div id="syncSetup">
+    <div class="field" style="margin-bottom:12px;">
+      <div class="field-label" style="margin-bottom:6px;">Personal Access Token</div>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+        style="background:#080808;border:1px solid #2d2d2d;color:#e0e0e0;font-family:'Share Tech Mono',monospace;font-size:0.95rem;padding:12px 13px;border-radius:5px;outline:none;width:100%;box-sizing:border-box;" />
+    </div>
+    <div style="font-size:0.8rem;color:#555;letter-spacing:0.06em;line-height:1.7;margin-bottom:14px;">
+      GitHub → Settings → Developer Settings → Personal Access Tokens → Tokens (classic) → New Token → check <strong style="color:#888;">gist</strong> only.
+    </div>
+    <button class="btn-log" onclick="gistConnect()" style="background:rgba(247,147,26,0.15);color:var(--orange);border:1px solid rgba(247,147,26,0.3);">CONNECT &amp; SYNC</button>
+  </div>
+
+  <div id="syncConnected" style="display:none;">
+    <div style="display:flex;gap:10px;">
+      <button class="btn-log" onclick="gistPush(true)" style="background:rgba(247,147,26,0.12);color:var(--orange);border:1px solid rgba(247,147,26,0.3);flex:1;">&#8593; PUSH</button>
+      <button class="btn-log" onclick="gistPull(true)" style="background:rgba(100,180,100,0.1);color:#6db86d;border:1px solid rgba(100,180,100,0.25);flex:1;">&#8595; PULL</button>
+    </div>
+    <div style="margin-top:12px;font-size:0.8rem;color:#555;letter-spacing:0.06em;">Auto-syncs on every change. Tap Pull to load data from another device.</div>
+    <button onclick="gistDisconnect()" style="margin-top:14px;background:none;border:none;color:#333;font-family:'Share Tech Mono',monospace;font-size:0.8rem;letter-spacing:0.1em;cursor:pointer;text-transform:uppercase;">✕ Disconnect</button>
+  </div>
+</div>
+
+<!-- ── Import / Export ── -->
+<div class="card">
+  <div class="card-title">Import / Export Data</div>
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <button class="btn-log" style="background:rgba(247,147,26,0.12);color:var(--orange);border:1px solid rgba(247,147,26,0.3);flex:1;" onclick="exportData()">&#8595; EXPORT</button>
+    <button class="btn-log" style="background:rgba(100,180,100,0.1);color:#6db86d;border:1px solid rgba(100,180,100,0.25);flex:1;" onclick="document.getElementById('importFile').click()">&#8593; IMPORT</button>
+  </div>
+  <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(this)" />
+  <div style="font-size:0.6rem;color:#333;letter-spacing:0.1em;line-height:1.6;">
+    EXPORT saves a .json file to your device.<br>IMPORT loads a previously exported file.
+  </div>
+</div>
+
+<button class="btn-reset-all" onclick="resetAll()">&#9888; Reset All Data</button>
+
+<script>
+  // ── State ──
+  let purchases = JSON.parse(localStorage.getItem('btc_v2_purchases') || '[]');
+  // purchases: [{ date, dollars, price, btc }]
+  let btcPrice  = null;
+  let chartMode = 'btc';
+  let myChart   = null;
+
+  // ── Persistence ──
+  function save() {
+    localStorage.setItem('btc_v2_purchases', JSON.stringify(purchases));
+    gistPush(false); // auto-push silently on every change
+  }
+
+  // ── GitHub Gist Sync ──
+  const GIST_FILENAME = 'btc-tracker-data.json';
+
+  function gistToken()  { return localStorage.getItem('gist_token') || ''; }
+  function gistId()     { return localStorage.getItem('gist_id') || ''; }
+
+  function setSyncStatus(msg, color) {
+    const el = document.getElementById('syncStatus');
+    el.textContent = msg;
+    el.style.color = color || '#555';
+  }
+
+  function gistShowConnected(connected) {
+    document.getElementById('syncSetup').style.display      = connected ? 'none'  : 'block';
+    document.getElementById('syncConnected').style.display  = connected ? 'block' : 'none';
+  }
+
+  async function gistConnect() {
+    const token = document.getElementById('ghToken').value.trim();
+    if (!token) { alert('Paste your Personal Access Token first.'); return; }
+    setSyncStatus('CONNECTING…', '#888');
+    try {
+      // verify token works
+      const check = await fetch('https://api.github.com/user', {
+        headers: { Authorization: 'token ' + token, 'User-Agent': 'btc-tracker' }
+      });
+      if (!check.ok) throw new Error('Invalid token');
+      localStorage.setItem('gist_token', token);
+
+      // if this device already has a gist id, just pull
+      if (gistId()) {
+        gistShowConnected(true);
+        setSyncStatus('SYNCED', '#27ae60');
+        await gistPull(false);
+        return;
+      }
+
+      // search existing gists for one matching our filename
+      setSyncStatus('SEARCHING…', '#888');
+      let foundId = null;
+      let page = 1;
+      while (!foundId) {
+        const listRes = await fetch(`https://api.github.com/gists?per_page=100&page=${page}`, {
+          headers: { Authorization: 'token ' + token, 'User-Agent': 'btc-tracker' }
+        });
+        if (!listRes.ok) break;
+        const gists = await listRes.json();
+        if (!gists.length) break;
+        const match = gists.find(g => g.files && g.files[GIST_FILENAME]);
+        if (match) { foundId = match.id; break; }
+        if (gists.length < 100) break;
+        page++;
+      }
+
+      if (foundId) {
+        // found existing gist — use it and pull data
+        localStorage.setItem('gist_id', foundId);
+        gistShowConnected(true);
+        await gistPull(false);
+        setSyncStatus('SYNCED', '#27ae60');
+        alert('Found your existing Gist — data pulled ✓');
+      } else {
+        // no existing gist — create one
+        const res = await fetch('https://api.github.com/gists', {
+          method: 'POST',
+          headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json', 'User-Agent': 'btc-tracker' },
+          body: JSON.stringify({
+            description: 'BTC Tracker Data',
+            public: false,
+            files: { [GIST_FILENAME]: { content: JSON.stringify({ version: 1, purchases }) } }
+          })
+        });
+        if (!res.ok) throw new Error('Could not create Gist');
+        const gist = await res.json();
+        localStorage.setItem('gist_id', gist.id);
+        gistShowConnected(true);
+        setSyncStatus('SYNCED', '#27ae60');
+      }
+    } catch(e) {
+      setSyncStatus('ERROR', '#c0392b');
+      alert('Could not connect: ' + e.message + '\n\nMake sure your token has "gist" permission.');
+    }
+  }
+
+  async function gistPush(showFeedback) {
+    if (!gistToken() || !gistId()) return;
+    if (showFeedback) setSyncStatus('PUSHING…', '#888');
+    try {
+      await fetch('https://api.github.com/gists/' + gistId(), {
+        method: 'PATCH',
+        headers: { Authorization: 'token ' + gistToken(), 'Content-Type': 'application/json', 'User-Agent': 'btc-tracker' },
+        body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify({ version: 1, purchases }) } } })
+      });
+      setSyncStatus('SYNCED  ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), '#27ae60');
+    } catch(e) {
+      setSyncStatus('SYNC FAILED', '#c0392b');
+    }
+  }
+
+  async function gistPull(showFeedback) {
+    if (!gistToken() || !gistId()) return;
+    if (showFeedback) setSyncStatus('PULLING…', '#888');
+    try {
+      const res  = await fetch('https://api.github.com/gists/' + gistId(), {
+        headers: { Authorization: 'token ' + gistToken(), 'User-Agent': 'btc-tracker' }
+      });
+      if (!res.ok) throw new Error();
+      const gist = await res.json();
+      const raw  = gist.files[GIST_FILENAME]?.content;
+      if (!raw) throw new Error('No data in Gist');
+      const data = JSON.parse(raw);
+      if (data.purchases && Array.isArray(data.purchases)) {
+        purchases = data.purchases;
+        localStorage.setItem('btc_v2_purchases', JSON.stringify(purchases));
+        updateBalance(); renderLog(); renderChart();
+        setSyncStatus('SYNCED  ' + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), '#27ae60');
+        if (showFeedback) alert('Data pulled from GitHub ✓');
+      }
+    } catch(e) {
+      setSyncStatus('PULL FAILED', '#c0392b');
+    }
+  }
+
+  function gistDisconnect() {
+    if (!confirm('Disconnect GitHub Sync? Your local data stays intact.')) return;
+    localStorage.removeItem('gist_token');
+    localStorage.removeItem('gist_id');
+    gistShowConnected(false);
+    setSyncStatus('NOT CONNECTED', '#555');
+  }
+
+  // ── Init Gist UI ──
+  function initGistUI() {
+    if (gistToken() && gistId()) {
+      gistShowConnected(true);
+      gistPull(false); // auto-pull latest on page load
+    }
+  }
+
+  // ── Derived totals ──
+  function totalBtc() {
+    return purchases.reduce((s, p) => p.type === 'sell' ? s - p.btc : s + p.btc, 0);
+  }
+  function totalUsd() {
+    return purchases.reduce((s, p) => p.type === 'sell' ? s - p.dollars : s + p.dollars, 0);
+  }
+
+  // ── Balance display ──
+  function updateBalance() {
+    const el = document.getElementById('balDisplay');
+    el.textContent = totalBtc().toFixed(8);
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    updateUsd();
+  }
+
+  function updateUsd() {
+    const el = document.getElementById('usdEq');
+    if (btcPrice && totalBtc() > 0) {
+      const val = (totalBtc() * btcPrice).toLocaleString('en-US', { style:'currency', currency:'USD' });
+      el.innerHTML = '&#8776; <span>' + val + ' USD</span>';
+    } else {
+      el.innerHTML = '&#8776; &#8212;';
+    }
+  }
+
+  // ── Price feed ──
+  async function fetchPrice() {
+    document.getElementById('priceDisplay').textContent = '...';
+    try {
+      const r = await fetch('https://api.coindesk.com/v1/bpi/currentprice/BTC.json');
+      const d = await r.json();
+      btcPrice = d.bpi.USD.rate_float;
+    } catch {
+      try {
+        const r2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+        const d2 = await r2.json();
+        btcPrice = d2.bitcoin.usd;
+      } catch { document.getElementById('priceDisplay').textContent = 'N/A'; return; }
+    }
+    document.getElementById('priceDisplay').textContent = '$' + Math.round(btcPrice).toLocaleString('en-US');
+    updateUsd();
+  }
+
+  // ── Log purchase ──
+  function logPurchase() {
+    const dateVal = document.getElementById('inDate').value;
+    const dollars = parseFloat(document.getElementById('inDollars').value);
+    const price   = parseFloat(document.getElementById('inPrice').value);
+    const btc     = parseFloat(document.getElementById('inBtc').value);
+
+    if (isNaN(dollars) || dollars <= 0) { alert('Enter a valid dollar amount.'); return; }
+    if (isNaN(price)   || price   <= 0) { alert('Enter the BTC price at purchase.'); return; }
+    if (isNaN(btc)     || btc     <= 0) { alert('Enter the BTC amount you received.'); return; }
+
+    purchases.push({ type: 'buy', date: dateVal || today(), dollars, price, btc });
+    save(); updateBalance(); renderLog(); renderChart();
+
+    document.getElementById('inDollars').value = '';
+    document.getElementById('inPrice').value   = '';
+    document.getElementById('inBtc').value     = '';
+  }
+
+  function logSale() {
+    const dateVal = document.getElementById('sellDate').value;
+    const dollars = parseFloat(document.getElementById('sellDollars').value);
+    const price   = parseFloat(document.getElementById('sellPrice').value);
+    const btc     = parseFloat(document.getElementById('sellBtc').value);
+
+    if (isNaN(dollars) || dollars <= 0) { alert('Enter a valid dollar amount.'); return; }
+    if (isNaN(price)   || price   <= 0) { alert('Enter the BTC price at sale.'); return; }
+    if (isNaN(btc)     || btc     <= 0) { alert('Enter the BTC amount you sold.'); return; }
+    if (btc > totalBtc()) { alert('Cannot sell more BTC than your current balance.'); return; }
+
+    purchases.push({ type: 'sell', date: dateVal || today(), dollars, price, btc });
+    save(); updateBalance(); renderLog(); renderChart();
+
+    document.getElementById('sellDollars').value = '';
+    document.getElementById('sellPrice').value   = '';
+    document.getElementById('sellBtc').value     = '';
+  }
+
+  function today() { return new Date().toISOString().split('T')[0]; }
+
+  // ── Render log ──
+  function fmtDate(d) {
+    if (!d) return '—';
+    const [y, m, dy] = d.split('-');
+    return parseInt(m) + '/' + parseInt(dy) + '/' + y.slice(2);
+  }
+
+  function renderLog() {
+    const list = document.getElementById('logList');
+    const tots = document.getElementById('logTotals');
+
+    if (!purchases.length) {
+      list.innerHTML = '<li class="no-entries">No purchases logged yet.</li>';
+      tots.style.display = 'none';
+      return;
+    }
+
+    // Show newest first
+    const sorted = [...purchases].map((p, i) => ({...p, i})).reverse();
+
+    list.innerHTML = sorted.map(p => `
+      <li class="log-row">
+        <span class="c-date">${fmtDate(p.date)}</span>
+        <span class="c-usd" style="color:#888">${p.dollars > 0 ? (p.type==='sell'?'-':'+') + '$' + p.dollars.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) : '<span style="color:#333">' + (p.note||'—') + '</span>'}</span>
+        <span class="c-price">${p.price > 0 ? '$' + Math.round(p.price).toLocaleString('en-US') : ''}</span>
+        <span class="c-btc" style="color:${p.type==='sell'?'#c0392b':'var(--gold)'}">${p.type==='sell'?'-':'+'}&#8239;${p.btc.toFixed(8)}</span>
+        <button class="btn-del" onclick="deleteEntry(${p.i})">&#x2715;</button>
+      </li>`).join('');
+
+    document.getElementById('totBtc').textContent = totalBtc().toFixed(8);
+    document.getElementById('totUsd').textContent = '$' + totalUsd().toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+    tots.style.display = 'flex';
+  }
+
+  function deleteEntry(idx) {
+    if (!confirm('Remove this purchase?')) return;
+    purchases.splice(idx, 1);
+    save();
+    updateBalance();
+    renderLog();
+    renderChart();
+  }
+
+  function clearLog() {
+    if (!purchases.length) return;
+    if (!confirm('Clear all purchases? This will also reset your balance and chart.')) return;
+    purchases = [];
+    save();
+    updateBalance();
+    renderLog();
+    renderChart();
+  }
+
+  // ── Chart ──
+  function setMode(mode) {
+    chartMode = mode;
+    document.getElementById('togBtc').classList.toggle('active', mode === 'btc');
+    document.getElementById('togUsd').classList.toggle('active', mode === 'usd');
+    document.getElementById('togDist').classList.toggle('active', mode === 'dist');
+    renderChart();
+  }
+
+  function renderChart() {
+    const canvas  = document.getElementById('chart');
+    const emptyEl = document.getElementById('chartEmpty');
+
+    if (!purchases.length) {
+      emptyEl.style.display = 'flex';
+      canvas.style.display  = 'none';
+      if (myChart) { myChart.destroy(); myChart = null; }
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    canvas.style.display  = 'block';
+
+    if (myChart) myChart.destroy();
+
+    if (chartMode === 'dist') {
+      renderDistChart(canvas);
+    } else {
+      renderAccumChart(canvas);
+    }
+  }
+
+  function renderDistChart(canvas) {
+    // Group purchases by $10k BTC price buckets
+    const bucketSize = 10000;
+    const buckets = {};
+
+    purchases.filter(p => p.type !== 'sell' && p.price > 0).forEach(p => {
+      const bucketStart = Math.floor(p.price / bucketSize) * bucketSize;
+      const label = '$' + (bucketStart / 1000).toFixed(0) + 'k – $' + ((bucketStart + bucketSize) / 1000).toFixed(0) + 'k';
+      if (!buckets[label]) buckets[label] = { dollars: 0, btc: 0, order: bucketStart };
+      buckets[label].dollars += p.dollars;
+      buckets[label].btc    += p.btc;
+    });
+
+    // Sort by price range
+    const sorted = Object.entries(buckets).sort((a, b) => a[1].order - b[1].order);
+    const labels = sorted.map(e => e[0]);
+    const values = sorted.map(e => parseFloat(e[1].dollars.toFixed(2)));
+    const btcVals = sorted.map(e => parseFloat(e[1].btc.toFixed(8)));
+
+    // Color bars by size — bigger = brighter orange
+    const maxVal = Math.max(...values);
+    const colors = values.map(v => {
+      const t = v / maxVal;
+      return `rgba(247,147,26,${(0.3 + t * 0.7).toFixed(2)})`;
+    });
+
+    myChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: '$ Invested',
+          data: values,
+          backgroundColor: colors,
+          borderColor: 'rgba(247,147,26,0.5)',
+          borderWidth: 1,
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#161616',
+            borderColor: '#2a2a2a',
+            borderWidth: 1,
+            titleColor: '#888',
+            bodyColor: '#f7931a',
+            titleFont: { family: 'Share Tech Mono', size: 10 },
+            bodyFont:  { family: 'Share Tech Mono', size: 11 },
+            callbacks: {
+              title: ctx => 'BTC Price: ' + ctx[0].label,
+              label: (ctx) => {
+                const i = ctx.dataIndex;
+                return [
+                  '$ Invested: $' + values[i].toLocaleString('en-US', {minimumFractionDigits:2}),
+                  'BTC Received: ' + btcVals[i].toFixed(8)
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid:  { color: '#141414' },
+            ticks: { color: '#888', font: { family: 'Share Tech Mono', size: 9 }, maxRotation: 45 }
+          },
+          y: {
+            grid:  { color: '#141414' },
+            ticks: {
+              color: '#888',
+              font:  { family: 'Share Tech Mono', size: 9 },
+              callback: v => '$' + v.toLocaleString('en-US')
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderAccumChart(canvas) {
+    const sorted   = [...purchases].sort((a, b) => a.date.localeCompare(b.date));
+    const monthMap = {};
+
+    let runBtc = 0, runUsd = 0;
+    sorted.forEach(p => {
+      const [y, m] = (p.date || '2024-01').split('-');
+      const key = y + '-' + m;
+      if (p.type === 'sell') {
+        runBtc -= p.btc;
+        runUsd -= p.dollars;
+      } else {
+        runBtc += p.btc;
+        runUsd += p.dollars;
+      }
+      monthMap[key] = { runBtc: Math.max(0, runBtc), runUsd: Math.max(0, runUsd) };
+    });
+
+    const keys   = Object.keys(monthMap).sort();
+    const labels = keys.map(k => {
+      const [y, m] = k.split('-');
+      return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1] + " '" + y.slice(2);
+    });
+
+    const values = keys.map(k =>
+      chartMode === 'btc'
+        ? parseFloat(monthMap[k].runBtc.toFixed(8))
+        : parseFloat(monthMap[k].runUsd.toFixed(2))
+    );
+
+    // Color: gradient from dim to orange
+    const colors = keys.map((_, i) => {
+      const t = keys.length === 1 ? 1 : i / (keys.length - 1);
+      const alpha = 0.25 + t * 0.7;
+      return `rgba(247,147,26,${alpha.toFixed(2)})`;
+    });
+
+    if (myChart) myChart.destroy();
+
+    myChart = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderColor: 'rgba(247,147,26,0.5)',
+          borderWidth: 1,
+          borderRadius: 3,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#161616',
+            borderColor: '#2a2a2a',
+            borderWidth: 1,
+            titleColor: '#555',
+            bodyColor: '#f7931a',
+            titleFont: { family: 'Share Tech Mono', size: 10 },
+            bodyFont:  { family: 'Share Tech Mono', size: 12 },
+            callbacks: {
+              title: ctx => ctx[0].label,
+              label: ctx => chartMode === 'btc'
+                ? ctx.parsed.y.toFixed(8) + ' BTC total'
+                : '$' + ctx.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2}) + ' invested'
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid:  { color: '#141414' },
+            ticks: { color: '#3a3a3a', font: { family: 'Share Tech Mono', size: 9 }, maxRotation: 45 }
+          },
+          y: {
+            grid:  { color: '#141414' },
+            ticks: {
+              color: '#3a3a3a',
+              font:  { family: 'Share Tech Mono', size: 9 },
+              callback: v => chartMode === 'btc'
+                ? v.toFixed(4)
+                : '$' + v.toLocaleString('en-US')
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function quickAdjust(type) {
+    const btc = parseFloat(document.getElementById('adjustBtc').value);
+    if (isNaN(btc) || btc <= 0) { alert('Enter a valid BTC amount.'); return; }
+    if (type === 'sub' && btc > totalBtc()) { alert('Cannot subtract more than your current balance.'); return; }
+
+    purchases.push({
+      type: type === 'add' ? 'buy' : 'sell',
+      date: today(),
+      dollars: 0,
+      price: 0,
+      btc: btc,
+      note: type === 'add' ? 'Quick Add' : 'Quick Subtract'
+    });
+
+    save(); updateBalance(); renderLog(); renderChart();
+    document.getElementById('adjustBtc').value = '';
+  }
+
+  // ── Import / Export ──
+  function exportData() {
+    const data = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      purchases
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'btc-tracker-backup-' + new Date().toISOString().split('T')[0] + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importData(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.purchases || !Array.isArray(data.purchases)) {
+          alert('Invalid backup file. Please use a file exported from this app.');
+          return;
+        }
+        if (!confirm('This will replace all your current data with the imported data. Are you sure?')) return;
+        purchases = data.purchases;
+        save();
+        updateBalance();
+        renderLog();
+        renderChart();
+        alert('Data imported successfully! ' + purchases.length + ' purchases loaded.');
+      } catch(e) {
+        alert('Could not read file. Make sure it\'s a valid BTC Tracker backup.');
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  // ── Reset all ──
+  function resetAll() {
+    if (!confirm('Reset EVERYTHING?\n\nThis clears all purchases, your balance, and the chart.')) return;
+    if (!confirm('Are you absolutely sure? This cannot be undone.')) return;
+    purchases = [];
+    save();
+    updateBalance();
+    renderLog();
+    renderChart();
+  }
+
+  // ── Init ──
+  document.getElementById('inDate').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('sellDate').value = new Date().toISOString().split('T')[0];
+  updateBalance();
+  renderLog();
+  renderChart();
+  fetchPrice();
+  setInterval(fetchPrice, 60000);
+  initGistUI();
+</script>
+</body>
+</html>
